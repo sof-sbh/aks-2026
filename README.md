@@ -4,8 +4,6 @@ Infrastructure Kubernetes sur Azure (AKS) provisionnée via Terraform, avec modu
 
 ## Architecture
 
-## Architecture
-
 ```
 aks-2026/
 └── terraform/
