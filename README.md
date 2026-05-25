@@ -5,13 +5,31 @@ Infrastructure Kubernetes sur Azure (AKS) provisionnée via Terraform, avec modu
 ## Architecture
 
 aks-2026/
-├── terraform/
-│   ├── 00-terraform-bootstrap-backend/   # Storage Account pour le state Terraform
-│   ├── 01-terraform-manifests-aks/       # Configuration principale AKS
-│   └── 02-modules/
-│       ├── az_aks/                       # Module AKS Cluster
-│       ├── az_ad_group/                  # Module Azure AD Group
-│       └── az_log_analytics/             # Module Log Analytics Workspace
+└── terraform/
+    ├── 00-terraform-bootstrap-backend/
+    │   ├── 01-main.tf
+    │   ├── 02-variables.tf
+    │   └── 03-outputs.tf
+    ├── 01-terraform-manifests-aks/
+    │   ├── 01-main.tf
+    │   ├── 02-variables.tf
+    │   ├── 03-resource-group.tf
+    │   ├── 04-aks-versions-datasource.tf
+    │   ├── 05-aks-cluster.tf
+    │   └── 99-outputs.tf
+    └── 02-modules/
+        ├── az_aks/
+        │   ├── 01-main.tf
+        │   ├── 02-variables.tf
+        │   └── 03-outputs.tf
+        ├── az_ad_group/
+        │   ├── main.tf
+        │   ├── variables.tf
+        │   └── outputs.tf
+        └── az_log_analytics/
+            ├── main.tf
+            ├── variables.tf
+            └── outputs.tf
 
 ## Modules
 
