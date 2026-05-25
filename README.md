@@ -4,6 +4,9 @@ Infrastructure Kubernetes sur Azure (AKS) provisionnée via Terraform, avec modu
 
 ## Architecture
 
+## Architecture
+
+```
 aks-2026/
 └── terraform/
     ├── 00-terraform-bootstrap-backend/
@@ -19,17 +22,9 @@ aks-2026/
     │   └── 99-outputs.tf
     └── 02-modules/
         ├── az_aks/
-        │   ├── 01-main.tf
-        │   ├── 02-variables.tf
-        │   └── 03-outputs.tf
         ├── az_ad_group/
-        │   ├── main.tf
-        │   ├── variables.tf
-        │   └── outputs.tf
         └── az_log_analytics/
-            ├── main.tf
-            ├── variables.tf
-            └── outputs.tf
+```
 
 ## Modules
 
