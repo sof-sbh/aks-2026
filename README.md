@@ -74,5 +74,5 @@ terraform apply
 
 ## Auteur
 
-SBH Consulting
+Sofiene Belharbi
 
