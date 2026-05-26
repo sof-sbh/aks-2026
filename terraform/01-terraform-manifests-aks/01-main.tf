@@ -27,7 +27,11 @@ terraform {
 # 2. Provider AzureRM
 provider "azurerm" {
   subscription_id = "a3dc9ad0-caa8-484f-83de-5491202f5473"
-  features {}
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
 # 3. Random Pet
