@@ -183,4 +183,5 @@ Déploiement de charts Helm sur le cluster AKS.
 
 ## Auteur
 
-Sofiene Belharbi — SBH Consulting
+Sofiene Belharbi
+
