@@ -14,7 +14,7 @@ variable "resource_group_name" {
 variable "storage_account_name" {
   type        = string
   description = "This variable defines the Storage account"
-  default     = "terraformstatesbh2028"
+  default     = "terraformstatesbh2030"
 }
 
 variable "storage_container_name" {

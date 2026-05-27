@@ -44,3 +44,4 @@ output "kubernetes_version" {
   description = "Version Kubernetes effective"
   value       = azurerm_kubernetes_cluster.aks_cluster.kubernetes_version
 }
+

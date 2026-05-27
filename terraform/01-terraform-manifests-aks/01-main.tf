@@ -18,7 +18,7 @@ terraform {
 
   backend "azurerm" {
     resource_group_name  = "terraform-aks-storage-rg"
-    storage_account_name = "terraformstatesbh2028"
+    storage_account_name = "terraformstatesbh2030"
     container_name       = "tfstatefiles"
     key                  = "dev.terraform.tfstate"
   }

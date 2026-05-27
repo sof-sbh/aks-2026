@@ -56,13 +56,16 @@ module "az_aks" {
   kubernetes_version  = data.azurerm_kubernetes_service_versions.current.latest_version
   node_resource_group = "${azurerm_resource_group.aks_rg.name}-nrg"
 
-  # 4. Add-on
+  # 2. Network 
+  vnet_subnet_id = azurerm_subnet.aks-default.id
+
+  # 3.Add-on
   log_analytics_workspace_id = module.az_log_analytics.workspace_id
 
-  # 5. RBAC
+  # 4. RBAC
   admin_group_object_ids = [module.az_ad_group.object_id]
 
-  # 6. Admin profiles
+  # 5. Admin profiles
   windows_admin_username = var.windows_admin_username
   windows_admin_password = var.windows_admin_password
   ssh_public_key         = var.ssh_public_key

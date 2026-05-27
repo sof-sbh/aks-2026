@@ -23,6 +23,8 @@ resource "azurerm_kubernetes_cluster" "aks_cluster" {
     min_count            = var.min_count
     os_disk_size_gb      = var.os_disk_size_gb
     type                 = "VirtualMachineScaleSets"
+    temporary_name_for_rotation = "tmppool" 
+    vnet_subnet_id       = var.vnet_subnet_id
     node_labels          = var.node_labels
     tags                 = var.node_pool_tags
   }

@@ -83,7 +83,7 @@ variable "node_labels" {
   type        = map(string)
   default = {
     "nodepool-type" = "system"
-    "environment"   = "dev"
+    "environment"   = ""
     "nodepoolos"    = "linux"
     "app"           = "system-apps"
   }
@@ -94,11 +94,23 @@ variable "node_pool_tags" {
   type        = map(string)
   default = {
     "nodepool-type" = "system"
-    "environment"   = "dev"
+    "environment"   = ""
     "nodepoolos"    = "linux"
     "app"           = "system-apps"
   }
 }
+
+
+# ---------------------------------------------------------------
+# 3. Vnet
+# --------------------------------------------------------------- 
+
+variable "vnet_subnet_id" {
+  description = "ID du subnet pour le default node pool"
+  type        = string
+  default     = null
+}
+
 
 # ---------------------------------------------------------------
 # 4. ADD-ON PROFILES
