@@ -22,3 +22,14 @@ output "a_09_log_analytics_workspace_id" {
   value = module.az_log_analytics.workspace_id
 }
 
+
+
+output "a_10_acr_name" {
+  description = "Nom du Container Registry"
+  value       = module.az_acr.acr_name
+}
+
+output "a_11_acr_login_server" {
+  description = "Login server ACR (ex: sbhaksdev.azurecr.io)"
+  value       = module.az_acr.acr_login_server
+}

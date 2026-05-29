@@ -55,6 +55,22 @@ variable "windows_admin_password" {
 }
 
 
+
+# Variables ACR — à ajouter dans 02-variables.tf
+
+variable "acr_name" {
+  description = "Nom du Container Registry (unique globalement, alphanumérique)"
+  type        = string
+}
+
+variable "acr_sku" {
+  description = "SKU ACR"
+  type        = string
+  default     = "Basic"
+}
+
+
+
 # Azure tags
 
 variable "tags" {
