@@ -16,9 +16,10 @@ terraform {
     }
   }
 
+
   backend "azurerm" {
-    resource_group_name  = "terraform-aks-storage-rg"
-    storage_account_name = "terraformstatesbh2030"
+    resource_group_name  = "rg-tfstate-bootstrap-weu"
+    storage_account_name = "terraformstatesbh2031"
     container_name       = "tfstatefiles"
     key                  = "dev.terraform.tfstate"
   }
