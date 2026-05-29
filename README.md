@@ -1,37 +1,79 @@
-# AKS 2026 — Infrastructure Terraform
+# 01-SBH-AKS-CLUSTER — Infrastructure Terraform
 
-Infrastructure Kubernetes sur Azure (AKS) provisionnée via Terraform, avec modules réutilisables.
+Infrastructure Kubernetes sur Azure (AKS) provisionnée via Terraform, avec modules réutilisables.  
+By [SBH Consulting](https://sbhconsulting-tech.fr)
+
+---
 
 ## Architecture
 
 ```
-AKS-2026/
+01-SBH-AKS-CLUSTER/
+├── .env                          ← secrets locaux (jamais commité)
+├── .gitignore
 ├── Makefile
+├── README.md
 └── terraform/
     ├── 00-terraform-bootstrap-backend/
-    │   ├── 01-main.tf
+    │   ├── 01-main.tf            ← Storage Account + Key Vault
     │   ├── 02-variables.tf
-    │   └── 03-outputs.tf
+    │   ├── 03-keyvault.tf
+    │   ├── 04-secrets.tf         ← secrets stockés dans KV
+    │   └── 05-outputs.tf
     ├── 01-terraform-manifests-aks/
-    │   ├── 01-main.tf
+    │   ├── 01-main.tf            ← backend + providers
     │   ├── 02-variables.tf
     │   ├── 03-resource-group.tf
     │   ├── 04-aks-versions-datasource.tf
     │   ├── 05-aks-cluster.tf
     │   ├── 06-aks-cluster-linux-user-nodepools.tf
     │   ├── 07-virtual-network.tf
+    │   ├── 08-acr.tf             ← Azure Container Registry
     │   ├── 99-outputs.tf
     │   └── envs/
     │       ├── dev.tfvars
     │       ├── staging.tfvars
     │       └── prod.tfvars
     └── 02-modules/
+        ├── az_acr/               ← Container Registry + AcrPull
         ├── az_06_aks_linux_user_nodepools/
         ├── az_ad_group/
         ├── az_aks/
         ├── az_helm/
         ├── az_keyvault/
         └── az_log_analytics/
+```
+
+---
+
+## Bootstrap — Ordre de déploiement
+
+Le bootstrap doit toujours être déployé **avant** le cluster AKS.
+
+```
+┌─────────────────────────────────────────────┐
+│  00-terraform-bootstrap-backend             │
+│                                             │
+│  rg-tfstate-bootstrap-weu                   │
+│    └── Storage Account (tfstate)            │
+│                                             │
+│  rg-keyvault-bootstrap-weu                  │
+│    └── Key Vault sbh-aks-kv-bootstrap       │
+│          ├── aks-windows-admin-password     │
+│          └── aks-ssh-public-key             │
+└─────────────────────────────────────────────┘
+                    │
+                    ▼
+┌─────────────────────────────────────────────┐
+│  01-terraform-manifests-aks                 │
+│                                             │
+│  rg-aks-dev                                 │
+│    ├── AKS Cluster                          │
+│    ├── ACR (sbhaksdev.azurecr.io)           │
+│    ├── VNet / Subnet                        │
+│    ├── Log Analytics Workspace              │
+│    └── Azure AD Group (admins)              │
+└─────────────────────────────────────────────┘
 ```
 
 ---
@@ -43,8 +85,8 @@ AKS-2026/
 | Paramètre | Dev | Staging | Prod |
 |---|---|---|---|
 | **AKS SKU Tier** | Free | Standard | Standard |
-| **Kubernetes version** | 1.30 | 1.30 | 1.30 |
-| **Resource Group** | rg-aks-dev-weu | rg-aks-staging-weu | rg-aks-prod-weu |
+| **Kubernetes version** | latest | latest | latest |
+| **Resource Group** | rg-aks-dev | rg-aks-staging | rg-aks-prod |
 | **Criticality** | low | medium | high |
 
 ### System Node Pool
@@ -73,31 +115,84 @@ AKS-2026/
 | **Address space** | 10.10.0.0/16 | 10.20.0.0/16 | 10.30.0.0/16 |
 | **Subnet** | 10.10.1.0/24 | 10.20.1.0/24 | 10.30.1.0/24 |
 
-### Key Vault & Logs
+### ACR
 
 | Paramètre | Dev | Staging | Prod |
 |---|---|---|---|
-| **KV SKU** | standard | standard | premium (HSM) |
-| **Purge protection** | ❌ | ❌ | ✅ |
-| **Soft delete retention** | 7 j | 30 j | 90 j |
-| **Log retention** | 30 j | 60 j | 90 j |
+| **SKU** | Basic | Standard | Premium |
+| **Login server** | sbhaksdev.azurecr.io | sbhaksstaging.azurecr.io | sbhaksprod.azurecr.io |
+| **Admin enabled** | ❌ | ❌ | ❌ |
+| **Intégration AKS** | Managed Identity (AcrPull) | Managed Identity (AcrPull) | Managed Identity (AcrPull) |
 
-### Terraform State (Backend Azure Blob)
+### Key Vault Bootstrap
 
 | Paramètre | Valeur |
 |---|---|
-| **Storage Account** | terraformstatesbh2030 |
-| **Resource Group** | terraform-aks-storage-rg |
-| **Container** | tfstate |
-| **Key Dev** | aks-dev.terraform.tfstate |
-| **Key Staging** | aks-staging.terraform.tfstate |
-| **Key Prod** | aks-prod.terraform.tfstate |
+| **Nom** | sbh-aks-kv-bootstrap |
+| **Resource Group** | rg-keyvault-bootstrap-weu |
+| **SKU** | Standard |
+| **Soft delete** | 7 jours |
+| **Purge protection** | ❌ (dev/bootstrap) |
+
+### Terraform State
+
+| Paramètre | Valeur |
+|---|---|
+| **Storage Account** | terraformstatesbh2031 |
+| **Resource Group** | rg-tfstate-bootstrap-weu |
+| **Container** | tfstatefiles |
+| **Key Dev** | dev.terraform.tfstate |
+| **Key Staging** | staging.terraform.tfstate |
+| **Key Prod** | prod.terraform.tfstate |
+
+---
+
+## Workflow complet
+
+### 1. Prérequis
+
+```bash
+# Authentification Azure
+az login
+
+# Charger les secrets (mot de passe Windows + SSH key)
+source .env
+```
+
+### 2. Bootstrap (première fois uniquement)
+
+```bash
+cd terraform/00-terraform-bootstrap-backend
+terraform init
+terraform apply
+```
+
+Crée :
+- `rg-tfstate-bootstrap-weu` + Storage Account
+- `rg-keyvault-bootstrap-weu` + Key Vault + secrets
+
+### 3. Cluster AKS
+
+```bash
+# Depuis la racine du repo
+make init    ENV=dev
+make plan    ENV=dev
+make apply   ENV=dev
+```
+
+### 4. Destroy (fin de session)
+
+```bash
+make destroy ENV=dev
+
+# Si destroy complet du bootstrap
+cd terraform/00-terraform-bootstrap-backend
+terraform destroy
+```
 
 ---
 
 ## Makefile
-
-### Targets disponibles
 
 | Target | Description |
 |---|---|
@@ -113,27 +208,6 @@ AKS-2026/
 | `state` | `terraform state list` |
 | `clean` | Supprime les fichiers `.tfplan` |
 
-### Usage
-
-```bash
-# Init + plan + apply sur un env
-make init    ENV=dev
-make plan    ENV=dev
-make apply   ENV=dev
-
-# Deploy complet en une commande
-make deploy  ENV=staging
-
-# Destroy avec confirmation interactive
-make destroy ENV=dev
-
-# CI/CD auto-approve
-make apply-auto ENV=prod
-
-# Aide
-make help
-```
-
 ---
 
 ## Modules
@@ -144,6 +218,12 @@ Provisionne un cluster AKS avec :
 - Identité MSI SystemAssigned
 - Intégration Azure AD RBAC
 - Monitoring via OMS Agent
+
+### az_acr
+Provisionne un Azure Container Registry avec :
+- SKU configurable par environnement (Basic/Standard/Premium)
+- Role assignment AcrPull sur la Managed Identity kubelet AKS
+- Pas de credentials — authentification via Managed Identity
 
 ### az_06_aks_linux_user_nodepools
 Gère les user node pools Linux avec labels et taints configurables.
@@ -159,6 +239,17 @@ Crée un Log Analytics Workspace pour la collecte des logs AKS.
 
 ### az_helm
 Déploiement de charts Helm sur le cluster AKS.
+
+---
+
+## Sécurité
+
+- Mots de passe et clés SSH **jamais en clair** dans le code
+- Secrets injectés via `TF_VAR_` depuis `.env` (non commité)
+- `.env` protégé par `.gitignore` (`*.env`)
+- Secrets stockés dans **Azure Key Vault** après bootstrap
+- `*.tfvars` non commités (sauf variables non sensibles)
+- `*.tfstate` exclus du repo
 
 ---
 
@@ -183,5 +274,6 @@ Déploiement de charts Helm sur le cluster AKS.
 
 ## Auteur
 
-Sofiene Belharbi
-
+**Sofiene Belharbi** — SBH Consulting  
+Cloud Platform | DevOps | SRE  
+[sbhconsulting-tech.fr](https://sbhconsulting-tech.fr)
