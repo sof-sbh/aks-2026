@@ -17,7 +17,7 @@ check-env:
 .PHONY: init
 init: check-env
 	@echo "$(YELLOW)[INIT] terraform init - ENV=$(ENV)$(RESET)"
-	cd $(TERRAFORM_DIR) && terraform init -backend-config="envs/$(ENV).tfvars" -reconfigure
+	cd $(TERRAFORM_DIR) && terraform init -reconfigure
 
 .PHONY: validate
 validate: check-env
